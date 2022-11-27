@@ -1,6 +1,10 @@
 # Take snapshot of R environment
 renv::snapshot()
 
+# Restore R environment
+# To reproduce the environment on another machine
+renv::restore()
+
 # Update R
 installr::updateR()
 
