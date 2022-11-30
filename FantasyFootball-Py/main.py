@@ -17,6 +17,6 @@ print('requirements.txt Saved')
 #    print('Files Backed Up')
 
 # Call script
-#exec(open("src/createReport.py").read())
+exec(open('src/prospectGrade.py').read())
 
 print('Script Complete')
