@@ -9,7 +9,7 @@ installr::updateR()
 update.packages(c('nflverse', 'cfbfastR', 'tidyverse'))
 
 # Take snapshot of R environment
-renv::snapshot()
+#renv::snapshot()
 
 # Load Packages
 require(nflverse)
