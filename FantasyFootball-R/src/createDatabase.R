@@ -247,8 +247,8 @@ t <- left_join(draft, combine %>% select(-rookie_year, -draft_team, -draft_round
 t <- t %>% bind_rows(anti_join(combine, draft %>% select(-rookie_year, -draft_team, -draft_round, -draft_pick), na_matches = "never"))
 
 t2 <- inner_join(roster, t %>% select(-gsis_id, -rookie_year, -draft_pick), na_matches = "never")
-t2 <- bind_rows(inner_join(anti_join(roster, t2, by = 'pfr_id', na_matches = "never") %>% select(-pfr_id), t %>% select(-rookie_year, -draft_pick), na_matches = "never"))
-t2 <- bind_rows(inner_join(anti_join(roster, t2, by = c('pfr_id', 'gsis_id'), na_matches = "never") %>% dplyr::filter(is.na(pfr_id) == TRUE) %>% select(-pfr_id), t %>% select(-gsis_id), by = c('rookie_year', 'draft_pick'), na_matches = "never"))
+t2 <- bind_rows(t2, inner_join(anti_join(roster, t2, by = 'pfr_id', na_matches = "never") %>% select(-pfr_id), t %>% select(-rookie_year, -draft_pick), na_matches = "never"))
+t2 <- bind_rows(t2, inner_join(anti_join(roster, t2, by = c('pfr_id', 'gsis_id'), na_matches = "never") %>% dplyr::filter(is.na(pfr_id) == TRUE) %>% select(-pfr_id), t %>% select(-gsis_id), by = c('rookie_year', 'draft_pick'), na_matches = "never"))
 
 t3 <- anti_join(roster, t2, by = 'pfr_id', na_matches = "never")
 t3 <- anti_join(t3, t2, by = 'gsis_id', na_matches = "never")
@@ -274,7 +274,7 @@ rosterNcaa <- cfbfastR::load_cfb_rosters(TRUE) %>%
          ncaa_year = year,
          ncaa_position = position,
          ncaa_final_season = season)
-rosterNcaa <- rosterNcaa[order(-rosterNcaa$ncaa_season),]
+rosterNcaa <- rosterNcaa[order(-rosterNcaa$ncaa_final_season),]
 rosterNcaa <- distinct(rosterNcaa, athlete_id, .keep_all = TRUE)
 rosterNcaa$name <- paste(rosterNcaa$first_name, rosterNcaa$last_name)
 rosterNcaa <- rosterNcaa %>%
@@ -326,18 +326,19 @@ draftNcaa$ncaa_position <- gsub('Tight End', 'TE', draftNcaa$ncaa_position)
 
 
 t <- left_join(rosterNcaa, recruiting %>% select(-name), na_matches = "never")
-rosterNcaa <- t %>% bind_rows(anti_join(recruiting, rosterNcaa %>% select(-name), na_matches = "never"))
+rosterNcaa <- bind_rows(t, anti_join(recruiting, rosterNcaa %>% select(-name), na_matches = "never"))
 t <- left_join(rosterNcaa, draftNcaa %>% select(-name, -ncaa_position), na_matches = "never")
-rosterNcaa <- t %>% bind_rows(anti_join(draftNcaa, rosterNcaa %>% select(-name, -ncaa_position), na_matches = "never"))
+rosterNcaa <- bind_rows(t, anti_join(draftNcaa, rosterNcaa %>% select(-name, -ncaa_position), na_matches = "never"))
 
 
 rosterNcaa$freshman_year <- ifelse(is.na(rosterNcaa$freshman_year), rosterNcaa$ncaa_final_season - rosterNcaa$ncaa_year + 1, rosterNcaa$freshman_year)
 rosterNcaa <- distinct(rosterNcaa, athlete_id, .keep_all = TRUE) %>%
   select(-ncaa_year)
+
 rm(recruiting, draftNcaa, t)
 
 t <- inner_join(roster, rosterNcaa %>% select(-name, -rookie_year, -draft_pick, -draft_round), keep = TRUE, by = c('espn_id' = 'athlete_id'), na_matches = "never")
-t <- t %>% bind_rows(inner_join(anti_join(roster, t, by = c('espn_id' = 'athlete_id'), na_matches = "never"), rosterNcaa %>% select(-name, -draft_round), by = c('rookie_year', 'draft_pick'), na_matches = "never"))
+t <- bind_rows(t, inner_join(anti_join(roster, t, by = c('espn_id' = 'athlete_id'), na_matches = "never"), rosterNcaa %>% select(-name, -draft_round), by = c('rookie_year', 'draft_pick'), na_matches = "never"))
 
 #rosterNcaa$merge_name <- nflreadr::clean_player_names(rosterNcaa$name, lowercase = TRUE)
 #t$merge_name <- nflreadr::clean_player_names(t$name, lowercase = TRUE)
@@ -345,13 +346,13 @@ t <- t %>% bind_rows(inner_join(anti_join(roster, t, by = c('espn_id' = 'athlete
 
 t2 <- anti_join(roster, t, by = c('espn_id'), na_matches = "never")
 t2 <- anti_join(t2, t, by = c('rookie_year', 'draft_pick'), na_matches = "never")
-t <- t %>% bind_rows(t2)
+t <- bind_rows(t, t2)
 
 t2 <- anti_join(rosterNcaa, t, by = c('athlete_id'), na_matches = "never")
 t2 <- anti_join(t2, t, by = c('rookie_year', 'draft_pick'), na_matches = "never")
-t <- t %>% bind_rows(t2)
+t <- bind_rows(t, t2)
 
-roster <- t %>% bind_rows(t2)
+roster <- bind_rows(t, t2)
 
 rm(year, rosterNcaa, t, t2)
 
@@ -583,9 +584,14 @@ recruiting <- left_join(recruiting, t, na_matches = "never")
 playerInfo <- left_join(playerInfo, t, na_matches = "never")
 
 
-
-
-
+### Changes Roster - Requires Roster ###
+# Speed Score
+roster$speed_score <- (roster$combine_wt * 200) / ((roster$forty) ^ 4)
+roster$burst_score <- (roster$vertical + ((max(roster$broad_jump, na.rm = TRUE) - max(roster$vertical, na.rm = TRUE)) / 2)) + (roster$broad_jump - ((max(roster$broad_jump, na.rm = TRUE) - max(roster$vertical, na.rm = TRUE)) / 2))
+roster$burst_score1 <- (roster$vertical + ((max(roster$broad_jump, na.rm = TRUE) - max(roster$vertical, na.rm = TRUE)) / 2))
+roster$burst_score2 <- (roster$broad_jump - ((max(roster$broad_jump, na.rm = TRUE) - max(roster$vertical, na.rm = TRUE)) / 2))
+roster$agility_score <- roster$cone + roster$shuttle
+t <- roster %>% select(name, combine_wt, forty, vertical, broad_jump, cone, shuttle, speed_score, burst_score1, burst_score2, burst_score, agility_score)
 
 
 arrow::write_parquet(roster, 'Y:/Fantasy Football/Database/roster.parquet')
