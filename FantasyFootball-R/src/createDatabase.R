@@ -588,8 +588,10 @@ playerInfo <- left_join(playerInfo, t, na_matches = "never")
 # Speed Score
 roster$speed_score <- (roster$combine_wt * 200) / ((roster$forty) ^ 4)
 roster$burst_score <- (roster$vertical + ((max(roster$broad_jump, na.rm = TRUE) - max(roster$vertical, na.rm = TRUE)) / 2)) + (roster$broad_jump - ((max(roster$broad_jump, na.rm = TRUE) - max(roster$vertical, na.rm = TRUE)) / 2))
+roster$burst_score <- (roster$burst_score1 + roster$burst_score2) / 2
 roster$burst_score1 <- (roster$vertical + ((max(roster$broad_jump, na.rm = TRUE) - max(roster$vertical, na.rm = TRUE)) / 2))
-roster$burst_score2 <- (roster$broad_jump - ((max(roster$broad_jump, na.rm = TRUE) - max(roster$vertical, na.rm = TRUE)) / 2))
+roster$burst_score1 <- ((roster$vertical - min(roster$vertical, na.rm = TRUE)) / (max(roster$vertical, na.rm = TRUE) - min(roster$vertical, na.rm = TRUE))) * 118.2
+roster$burst_score2 <- ((roster$broad_jump - min(roster$broad_jump, na.rm = TRUE)) / (max(roster$broad_jump, na.rm = TRUE) - min(roster$broad_jump, na.rm = TRUE))) * 118.2
 roster$agility_score <- roster$cone + roster$shuttle
 t <- roster %>% select(name, combine_wt, forty, vertical, broad_jump, cone, shuttle, speed_score, burst_score1, burst_score2, burst_score, agility_score)
 
