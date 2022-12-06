@@ -7,8 +7,6 @@ roster$combine_bmi <- (roster$combine_wt * 0.453592) / ((roster$combine_ht * 0.0
 roster$early_declare <- ifelse(roster$rookie_year - roster$freshman_year <= 3, 1, NA)
 
 
-
-### College Calculated Stats ###
 ### Calculate year in each league ###
 # Changes playerStatsYearly
 t <- roster %>%
@@ -115,25 +113,33 @@ rm(t)
 ###
 
 
+
+### College Calculated Stats ###
+
 # Add Following Advanced Stats to Yearly Player stats Table using Left Join by athlete_id
 # Completion %, Interceptions per Pass Attempt, YPA, YPC, & YPR
 t <- playerStatsYearly %>%
-  dplyr::filter(league == "NCAA" & is.na(athlete_id) == FALSE) %>%
-  group_by(athlete_id, season) %>%
-  mutate(comp_perc = sum(completions) / sum(attempts),
-         int_ratio = sum(interceptions) / sum(attempts),
-         ypa = sum(passing_yards) / sum(attempts),
+  #dplyr::filter(league == "NCAA" & is.na(athlete_id) == FALSE) %>%
+  group_by(athlete_id, gsis_id, season) %>%
+  mutate(ypa = sum(passing_yards) / sum(attempts),
          ypc = sum(rushing_yards) / sum(carries),
          ypr = sum(receiving_yards) / sum(receptions),
-         ypt = sum(rushing_yards + receiving_yards) / sum(carries + receptions))
-t$comp_perc <- gsub(Inf, NA, t$ncaa_comp_perc)
-t$int_ratio <- gsub(Inf, NA, t$ncaa_int_ratio)
-t$ypa <- gsub(Inf, NA, t$ncaa_ypa)
-t$ypc <- gsub(Inf, NA, t$ncaa_ypc)
-t$ypr <- gsub(Inf, NA, t$ncaa_ypr)
-t$ypt <- gsub(Inf, NA, t$ncaa_ypt)
+         ypt = sum(rushing_yards + receiving_yards) / sum(carries + receptions),
+         comp_perc = sum(completions) / sum(attempts),
+         int_rate = sum(interceptions) / sum(attempts),
+         td_rate = sum(passing_tds) / sum(attempts)) %>%
+  select(athlete_id, gsis_id, season, ypa, ypc, ypr, ypt, comp_perc, int_rate, td_rate)
+t$ypa <- gsub(Inf, NA, t$ypa)
+t$ypc <- gsub(Inf, NA, t$ypc)
+t$ypr <- gsub(Inf, NA, t$ypr)
+t$ypt <- gsub(Inf, NA, t$ypt)
+t$comp_perc <- gsub(Inf, NA, t$comp_perc)
+t$int_rate <- gsub(Inf, NA, t$int_rate)
+t$td_rate <- gsub(Inf, NA, t$td_rate)
 t <- distinct(t, athlete_id, .keep_all = TRUE)
 playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never")
+t2 <- playerStatsYearly
+t2 <- left_join(t2, t, na_matches = "never")
 
 # Add Receiving Yards per Team Pass Attempt & Average Yards per Team Play
 teamStatsTemp <- teamStats %>%
