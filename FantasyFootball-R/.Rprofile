@@ -6,7 +6,7 @@ cat('Using Project .Rprofile\n')
 installr::updateR()
 
 # Update Packages
-update.packages(c('nflverse', 'cfbfastR', 'tidyverse'))
+#update.packages(c('nflverse', 'cfbfastR', 'tidyverse'))
 
 # Take snapshot of R environment
 #renv::snapshot()

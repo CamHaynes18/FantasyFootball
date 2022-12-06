@@ -1,12 +1,3 @@
-# Calculate BMI
-roster$bmi <- (roster$wt * 0.453592) / ((roster$ht * 0.0254) ^ 2)
-roster$combine_bmi <- (roster$combine_wt * 0.453592) / ((roster$combine_ht * 0.0254) ^ 2)
-
-
-# Calculate Early Declares
-roster$early_declare <- ifelse(roster$rookie_year - roster$freshman_year <= 3, 1, NA)
-
-
 ### Calculate year in each league ###
 # Changes playerStatsYearly
 t <- roster %>%
@@ -22,9 +13,8 @@ playerStatsYearly$year_in_league <- if_else(playerStatsYearly$league == 'NFL', p
 playerStatsYearly$year_in_league <- if_else(playerStatsYearly$year_in_league <= 0, NA, playerStatsYearly$year_in_league)
 playerStatsYearly <- playerStatsYearly %>%
   select(-rookie_year, -freshman_year)
-
-rm(t)
 ###
+
 
 ### Calculate first 3 years/career avg fantasy points per game ###
 # Changes roster
@@ -63,8 +53,6 @@ t <- playerStatsYearly %>%
   select(-fantasy_points_hppr, -games)
 t <- distinct(t, gsis_id, .keep_all = TRUE)
 roster <- left_join(roster, t, na_matches = "never")
-
-rm(t)
 ###
 
 ### Calculate rank of each years fantasy finishes ###
@@ -81,8 +69,6 @@ t <- left_join(playerStatsYearly, t, na_matches = "never") %>%
 
 playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never") %>%
   select(-position)
-
-rm(t)
 ###
 
 ### Calculate # of top 6/12/24 fantasy finishes ###
@@ -108,27 +94,30 @@ t <- playerStatsYearly %>%
   rename(top24 = n)
 t <- distinct(t, gsis_id, .keep_all = TRUE)
 roster <- left_join(roster, t, na_matches = "never")
-
-rm(t)
 ###
 
 
 
-### College Calculated Stats ###
+### Calculate Advanced Stats ###
 
-# Add Following Advanced Stats to Yearly Player stats Table using Left Join by athlete_id
-# Completion %, Interceptions per Pass Attempt, YPA, YPC, & YPR
+
+
+### Changes playerStatsYearly - Requires playerStatsYearly ###
+
+# YPA, YPC, YPR, YPT, Completion %, Int Rate, TD Rate, TD-Int Rate
 t <- playerStatsYearly %>%
   #dplyr::filter(league == "NCAA" & is.na(athlete_id) == FALSE) %>%
   group_by(athlete_id, gsis_id, season) %>%
-  mutate(ypa = sum(passing_yards) / sum(attempts),
-         ypc = sum(rushing_yards) / sum(carries),
-         ypr = sum(receiving_yards) / sum(receptions),
+  mutate(ypa = passing_yards / attempts,
+         ypc = rushing_yards / carries,
+         ypr = receiving_yards / receptions,
          ypt = sum(rushing_yards + receiving_yards) / sum(carries + receptions),
-         comp_perc = sum(completions) / sum(attempts),
-         int_rate = sum(interceptions) / sum(attempts),
-         td_rate = sum(passing_tds) / sum(attempts)) %>%
-  select(athlete_id, gsis_id, season, ypa, ypc, ypr, ypt, comp_perc, int_rate, td_rate)
+         comp_perc = completions / attempts,
+         int_rate = interceptions / attempts,
+         td_rate = passing_tds / attempts,
+         td_int_rate = td_rate / int_rate,
+         aya = (sum(passing_yards) + (20 * sum(passing_tds)) - (45 * sum(interceptions))) / sum(attempts)) %>%
+  select(athlete_id, gsis_id, season, ypa, ypc, ypr, ypt, comp_perc, int_rate, td_rate, td_int_rate, aya)
 t$ypa <- gsub(Inf, NA, t$ypa)
 t$ypc <- gsub(Inf, NA, t$ypc)
 t$ypr <- gsub(Inf, NA, t$ypr)
@@ -136,12 +125,17 @@ t$ypt <- gsub(Inf, NA, t$ypt)
 t$comp_perc <- gsub(Inf, NA, t$comp_perc)
 t$int_rate <- gsub(Inf, NA, t$int_rate)
 t$td_rate <- gsub(Inf, NA, t$td_rate)
-t <- distinct(t, athlete_id, .keep_all = TRUE)
-playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never")
-t2 <- playerStatsYearly
-t2 <- left_join(t2, t, na_matches = "never")
+t$td_int_rate <- gsub(Inf, NA, t$td_int_rate)
+t$aya <- gsub(Inf, NA, t$aya)
+t <- na_if(t, NaN)
+t <- distinct(t, .keep_all = TRUE)
+playerStatsYearly <- left_join(playerStatsYearly, t)
 
-# Add Receiving Yards per Team Pass Attempt & Average Yards per Team Play
+
+
+### Changes playerStatsYearly - Requires playerStatsYearly, teamStatsYearly ###
+
+# Receiving Yards per Team Pass Attempt & Average Yards per Team Play
 teamStatsTemp <- teamStats %>%
   select(-games)
 t <- left_join(playerStats, teamStatsTemp) %>%
@@ -155,17 +149,9 @@ recruiting <- left_join(recruiting, t, na_matches = "never")
 
 
 
-# QBR
-t <- nflreadr::load_espn_qbr(league = 'college', seasons = TRUE) %>%
-  dplyr::select(-week, -week_text, -name_display, -player_uid, -player_guid, -name_first, -name_last, -name_short, -age, -team_name, -team_short_name, -exp_sack, -penalty, -qbr_raw, -sack, -slug, -team_id, -team_uid, -headshot_href) %>%
-  rename(qbr = qbr_total,
-         espn_id = player_id)
-t <- distinct(t, espn_id, .keep_all = TRUE)
+### Changes playerStatsYearly - Requires playerStatsYearly, teamStatsYearly, roster ###
 
-t <- roster %>%
-  dplyr::filter(is.na(espn_id) == FALSE & is.na(athlete_id) == FALSE & position == 'QB')
-
-# College Dominator Rating
+# Dominator Rating
 playerInfoTemp <- playerInfo %>%
   select(espn_id, name, position) %>%
   rename(athlete_id = espn_id)
@@ -183,33 +169,52 @@ group_by(athlete_id, season) %>%
   select(athlete_id, dom)
 t <- distinct(t)
 
+arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
 
 
 
-# Add Early College (Freshman/Sophomore) Best College Season Total Yards to Recruiting Table using Left Join by athlete_id
-t <- playerStats %>%
-  dplyr::filter(league == 'NCAA' & year_in_league <= 2 & is.na(athlete_id) == FALSE) %>%
-  select(athlete_id, year_in_league, rushing_yards, receiving_yards)
-t[is.na(t)] <- 0
-t <- t%>%
-  group_by(athlete_id, year_in_league) %>%
-  mutate(ncaa_ec_bcs_yards = rushing_yards + receiving_yards) %>%
-  select(athlete_id, year_in_league, ncaa_ec_bcs_yards)
-t <- t %>%
-  group_by(athlete_id) %>%
-  mutate(ncaa_ec_bcs_yards = max(ncaa_ec_bcs_yards)) %>%
-  select(-year_in_league)
-t <- distinct(t)
-recruiting <- left_join(recruiting, t, na_matches = "never")
-playerInfo <- left_join(playerInfo, t, na_matches = "never")
+### Changes roster - Requires roster ###
 
+# BMI
+roster$bmi <- (roster$wt * 0.453592) / ((roster$ht * 0.0254) ^ 2)
+roster$combine_bmi <- (roster$combine_wt * 0.453592) / ((roster$combine_ht * 0.0254) ^ 2)
 
-### Changes Roster - Requires Roster ###
-# Speed Score
+# Early Declares
+roster$early_declare <- ifelse(roster$rookie_year - roster$freshman_year <= 3, 1, NA)
+
+# Speed, Burst, Agility Scores
 roster$speed_score <- (roster$combine_wt * 200) / ((roster$forty) ^ 4)
 roster$burst_score <- 89.117 + 31.137 * ((roster$broad_jump - min(roster$broad_jump, na.rm = TRUE)) / (max(roster$broad_jump, na.rm = TRUE) - min(roster$broad_jump, na.rm = TRUE))) + ((roster$vertical - min(roster$vertical, na.rm = TRUE)) / (max(roster$vertical, na.rm = TRUE) - min(roster$vertical, na.rm = TRUE)))
 roster$agility_score <- roster$cone + roster$shuttle
-t <- roster %>% select(name, combine_wt, forty, vertical, broad_jump, cone, shuttle, speed_score, burst_score, agility_score)
+
+# QBR
+# t <- nflreadr::load_espn_qbr(league = 'college', seasons = TRUE) %>%
+#   dplyr::select(-week, -week_text, -name_display, -player_uid, -player_guid, -name_first, -name_last, -name_short, -age, -team_name, -team_short_name, -exp_sack, -penalty, -qbr_raw, -sack, -slug, -team_id, -team_uid, -headshot_href) %>%
+#   rename(qbr = qbr_total,
+#          espn_id = player_id)
+# t <- distinct(t, espn_id, .keep_all = TRUE)
+# t <- roster %>%
+#   dplyr::filter(is.na(espn_id) == FALSE & is.na(athlete_id) == FALSE & position == 'QB')
+
+arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
 
 
-arrow::write_parquet(roster, 'Y:/Fantasy Football/Database/roster.parquet')
+
+### Archive ###
+
+# Early College (Freshman/Sophomore) Best College Season Total Yards to Recruiting Table using Left Join by athlete_id
+# t <- playerStats %>%
+#   dplyr::filter(league == 'NCAA' & year_in_league <= 2 & is.na(athlete_id) == FALSE) %>%
+#   select(athlete_id, year_in_league, rushing_yards, receiving_yards)
+# t[is.na(t)] <- 0
+# t <- t%>%
+#   group_by(athlete_id, year_in_league) %>%
+#   mutate(ncaa_ec_bcs_yards = rushing_yards + receiving_yards) %>%
+#   select(athlete_id, year_in_league, ncaa_ec_bcs_yards)
+# t <- t %>%
+#   group_by(athlete_id) %>%
+#   mutate(ncaa_ec_bcs_yards = max(ncaa_ec_bcs_yards)) %>%
+#   select(-year_in_league)
+# t <- distinct(t)
+# recruiting <- left_join(recruiting, t, na_matches = "never")
+# playerInfo <- left_join(playerInfo, t, na_matches = "never")

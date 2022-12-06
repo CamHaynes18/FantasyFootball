@@ -184,9 +184,9 @@ teamStatsYearly <- teamStatsYearly %>% bind_rows(teamStatsNcaaYearly)
 
 rm(year, currentWeek, week, startWeek, endWeek, playerStatsNcaa, playerStatsNcaaWeekly, playerStatsNcaaYearly, teamStatsNcaaWeekly, teamStatsNcaaYearly, t, t2)
 
-arrow::write_parquet(playerStatsWeekly, 'Y:/Fantasy Football/Database/playerStatsWeekly.parquet')
+arrow::write_parquet(playerStatsWeekly, paste(databasePath, 'playerStatsWeekly.parquet', sep = ''))
 arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
-arrow::write_parquet(teamStatsWeekly, 'Y:/Fantasy Football/Database/teamStatsWeekly.parquet')
+arrow::write_parquet(teamStatsWeekly, paste(databasePath, 'teamStatsWeekly.parquet', sep = ''))
 arrow::write_parquet(teamStatsYearly, paste(databasePath, 'teamStatsYearly.parquet', sep = ''))
 
 print('Player and Team Stats Saved')
