@@ -15,7 +15,7 @@ update.packages()
 usethis::edit_r_profile()
 usethis::edit_r_environ()
 
-
+options(parallelly.makeNodePSOCK.setup_strategy = "sequential")
 
 # get my working directory
 getwd()

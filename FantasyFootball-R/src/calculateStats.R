@@ -154,23 +154,21 @@ recruiting <- left_join(recruiting, t, na_matches = "never")
 # Dominator Rating
 t <- playerStatsYearly %>%
   dplyr::filter(league == 'NCAA' & is.na(athlete_id) == FALSE) %>%
-  select(athlete_id, season, league, rushing_yards, rushing_tds, receiving_yards, receiving_tds)
+  select(athlete_id, team, season, rushing_yards, rushing_tds, receiving_yards, receiving_tds)
 t2 <- teamStatsYearly %>%
   dplyr::filter(league == 'NCAA') %>%
-  select(team, season, league, rushing_yards_team, rushing_tds_team, receiving_yards_team, receiving_tds_team)
+  select(team, season, rushing_yards_team, rushing_tds_team, receiving_yards_team, receiving_tds_team)
 t3 <- roster %>%
   dplyr::filter(is.na(athlete_id) == FALSE) %>%
-  select(athlete_id, position)
+  select(name, athlete_id, position, ncaa_position, rec_position)
+t3$ncaa_position <- if_else(is.na(t3$ncaa_position) == TRUE, if_else(is.na(t3$position) == FALSE, t3$position, t3$rec_position), t3$ncaa_position)
+t3 <- t3 %>%
+  dplyr::filter(ncaa_position == 'RB' | ncaa_position == 'WR' | ncaa_position == 'TE') %>%
+  select(-position, -rec_position)
 
+t <- left_join(left_join(t, t2), t3)
+t$dom <- if_else(t$ncaa_position == 'RB', mean((sum(rushing_yards + receiving_yards) / sum(rushing_yards_team + receiving_yards_team)), (sum(rushing_tds + receiving_tds) / sum(rushing_tds_team + receiving_tds_team))), mean((receiving_yards / receiving_yards_team), (receiving_tds / receiving_tds_team)))
 
-t <- left_join(t, t2)
-  dplyr::filter(position == 'WR')
-t <- left_join(t, teamStatsTemp) %>%
-  dplyr::filter(league == "NCAA" & is.na(athlete_id) == FALSE)
-group_by(athlete_id, season) %>%
-  mutate(dom = sum(receiving_yards) / sum(attempts_team),
-         dom = sum(rushing_yards + receiving_yards) / sum(carries_team + attempts_team)) %>%
-  select(athlete_id, dom)
 t <- distinct(t)
 
 arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))

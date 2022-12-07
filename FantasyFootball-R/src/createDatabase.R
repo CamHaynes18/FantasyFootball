@@ -3,7 +3,7 @@
 print('Create Database Started')
 rm(playerStatsWeekly, teamStatsWeekly, playerStatsYearly, teamStatsYearly)
 gc(verbose = FALSE, reset = TRUE)
-future::plan('multisession', workers = 8)
+#future::plan('multisession')
 
 maxYear <- nflreadr::get_latest_season()
 playerStatsWeekly <- nflreadr::load_player_stats(TRUE, 'offense') %>%
@@ -38,6 +38,12 @@ t <- playerStatsWeekly %>%
   group_by(gsis_id, season) %>%
   summarise_all(sum, na.rm=T)
 playerStatsYearly <- inner_join(playerStatsYearly, t, na_matches = "never")
+t <- playerStatsWeekly %>%
+  select(gsis_id, team, week, season)
+t <- t[order(-t$week, -t$season),]
+t <- distinct(t, gsis_id, season, .keep_all = TRUE) %>%
+  select(gsis_id, season, team)
+playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never")
 playerStatsYearly$league <- 'NFL'
 
 teamStatsYearly <- teamStatsWeekly %>%
@@ -163,6 +169,12 @@ t <- playerStatsNcaaWeekly %>%
   group_by(athlete_id, season) %>%
   summarise_all(sum, na.rm=T)
 playerStatsNcaaYearly <- inner_join(playerStatsNcaaYearly, t, na_matches = "never")
+t <- playerStatsNcaaWeekly %>%
+  select(athlete_id, team, week, season)
+t <- t[order(-t$week, -t$season),]
+t <- distinct(t, athlete_id, season, .keep_all = TRUE) %>%
+  select(athlete_id, season, team)
+playerStatsNcaaYearly <- left_join(playerStatsNcaaYearly, t, na_matches = "never")
 playerStatsNcaaYearly$league <- 'NCAA'
 
 teamStatsNcaaYearly <- teamStatsNcaaWeekly %>%
