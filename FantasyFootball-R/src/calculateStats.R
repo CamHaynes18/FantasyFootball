@@ -152,14 +152,18 @@ recruiting <- left_join(recruiting, t, na_matches = "never")
 ### Changes playerStatsYearly - Requires playerStatsYearly, teamStatsYearly, roster ###
 
 # Dominator Rating
-playerInfoTemp <- playerInfo %>%
-  select(espn_id, name, position) %>%
-  rename(athlete_id = espn_id)
-teamStatsTemp <- teamStats %>%
-  select(-games)
-t <- playerStats %>%
-  dplyr::filter(league == 'NCAA' & season == 2021)
-t <- left_join(t, playerInfoTemp) %>%
+t <- playerStatsYearly %>%
+  dplyr::filter(league == 'NCAA' & is.na(athlete_id) == FALSE) %>%
+  select(athlete_id, season, league, rushing_yards, rushing_tds, receiving_yards, receiving_tds)
+t2 <- teamStatsYearly %>%
+  dplyr::filter(league == 'NCAA') %>%
+  select(team, season, league, rushing_yards_team, rushing_tds_team, receiving_yards_team, receiving_tds_team)
+t3 <- roster %>%
+  dplyr::filter(is.na(athlete_id) == FALSE) %>%
+  select(athlete_id, position)
+
+
+t <- left_join(t, t2)
   dplyr::filter(position == 'WR')
 t <- left_join(t, teamStatsTemp) %>%
   dplyr::filter(league == "NCAA" & is.na(athlete_id) == FALSE)
@@ -184,6 +188,7 @@ roster$early_declare <- ifelse(roster$rookie_year - roster$freshman_year <= 3, 1
 
 # Speed, Burst, Agility Scores
 roster$speed_score <- (roster$combine_wt * 200) / ((roster$forty) ^ 4)
+roster$hass <- ifelse(roster$position == 'WR', roster$speed_score * (roster$combine_ht / 73), ifelse(roster$position == 'TE', roster$speed_score * (roster$combine_ht / 76.4), NA))
 roster$burst_score <- 89.117 + 31.137 * ((roster$broad_jump - min(roster$broad_jump, na.rm = TRUE)) / (max(roster$broad_jump, na.rm = TRUE) - min(roster$broad_jump, na.rm = TRUE))) + ((roster$vertical - min(roster$vertical, na.rm = TRUE)) / (max(roster$vertical, na.rm = TRUE) - min(roster$vertical, na.rm = TRUE)))
 roster$agility_score <- roster$cone + roster$shuttle
 

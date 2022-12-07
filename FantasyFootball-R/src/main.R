@@ -1,6 +1,6 @@
 roster <- arrow::read_parquet(paste(databasePath, 'roster.parquet', sep = ''))
 
-#playerStatsWeekly <- arrow::read_parquet('Y:/Fantasy Football/Database/playerStatsWeekly.parquet')
+playerStatsWeekly <- arrow::read_parquet('Y:/Fantasy Football/Database/playerStatsWeekly.parquet')
 #teamStatsWeekly <- arrow::read_parquet('Y:/Fantasy Football/Database/teamStatsWeekly.parquet')
 playerStatsYearly <- arrow::read_parquet(paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
 teamStatsYearly <- arrow::read_parquet(paste(databasePath, 'teamStatsYearly.parquet', sep = ''))

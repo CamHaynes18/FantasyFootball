@@ -332,7 +332,7 @@ rosterNcaa$freshman_year <- ifelse(is.na(rosterNcaa$freshman_year), rosterNcaa$n
 rosterNcaa <- distinct(rosterNcaa, athlete_id, .keep_all = TRUE) %>%
   select(-ncaa_year)
 
-rm(recruiting, draftNcaa, t)
+rm(recruiting, draftNcaa)
 
 t <- inner_join(roster, rosterNcaa %>% select(-name, -rookie_year, -draft_pick, -draft_round), keep = TRUE, by = c('espn_id' = 'athlete_id'), na_matches = "never")
 t <- bind_rows(t, inner_join(anti_join(roster, t, by = c('espn_id' = 'athlete_id'), na_matches = "never"), rosterNcaa %>% select(-name, -draft_round), by = c('rookie_year', 'draft_pick'), na_matches = "never"))
@@ -350,23 +350,24 @@ t2 <- anti_join(t2, t, by = c('rookie_year', 'draft_pick'), na_matches = "never"
 t <- bind_rows(t, t2)
 
 roster <- bind_rows(t, t2)
+roster <- distinct(roster, .keep_all = TRUE)
 
 rm(year, rosterNcaa, t, t2)
 
 
 
 # Load Relative Athletic Score .csv File, Left Join using name, position, rookie_year
-ras <- read.csv('Y:/Fantasy Football/Database/ras.csv') %>%
-  select(-Link, -College) %>%
+ras <- read.csv(paste(databasePath, 'ras.csv', sep = '')) %>%
+  select(-ï..Link, -College) %>%
   dplyr::rename(merge_name = Name,
                 position = Pos,
                 rookie_year = Year,
                 ras = RAS,
                 all_time_ras = AllTime) %>%
   dplyr::filter(position == 'QB' | position == 'RB' | position == 'WR' | position == 'TE')
+ras <- distinct(ras, .keep_all = TRUE)
 ras$merge_name <- nflreadr::clean_player_names(ras$merge_name, lowercase = TRUE)
 roster$merge_name <- nflreadr::clean_player_names(roster$name, lowercase = TRUE)
-ras <- distinct(ras, .keep_all = TRUE)
 
 roster <- left_join(roster, ras, na_matches = "never")
 rm(ras)
