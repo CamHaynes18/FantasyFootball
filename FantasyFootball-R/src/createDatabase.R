@@ -45,6 +45,7 @@ t <- distinct(t, gsis_id, season, .keep_all = TRUE) %>%
   select(gsis_id, season, team)
 playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never")
 playerStatsYearly$league <- 'NFL'
+playerStatsYearly <- playerStatsYearly %>% ungroup
 
 teamStatsYearly <- teamStatsWeekly %>%
   group_by(team, season) %>%
@@ -55,6 +56,7 @@ t <- teamStatsWeekly %>%
   summarise_all(sum, na.rm=T)
 teamStatsYearly <- inner_join(teamStatsYearly, t)
 teamStatsYearly$league <- 'NFL'
+teamStatsYearly <- teamStatsYearly %>% ungroup
 
 print('NFL Yearly Stats Loaded')
 
@@ -160,6 +162,7 @@ teamStatsNcaaWeekly <- teamStatsNcaaWeekly %>%
          season = season_team,
          week = week_team)
 teamStatsNcaaWeekly$league <- 'NCAA'
+teamStatsNcaaWeekly <- teamStatsWeekly %>% ungroup
 
 playerStatsNcaaYearly <- playerStatsNcaaWeekly %>%
   group_by(athlete_id, season) %>%
@@ -176,6 +179,7 @@ t <- distinct(t, athlete_id, season, .keep_all = TRUE) %>%
   select(athlete_id, season, team)
 playerStatsNcaaYearly <- left_join(playerStatsNcaaYearly, t, na_matches = "never")
 playerStatsNcaaYearly$league <- 'NCAA'
+playerStatsNcaaYearly <- playerStatsNcaaYearly %>% ungroup
 
 teamStatsNcaaYearly <- teamStatsNcaaWeekly %>%
   group_by(team, season) %>%
@@ -186,6 +190,7 @@ t <- teamStatsNcaaWeekly %>%
   summarise_all(sum, na.rm=T)
 teamStatsNcaaYearly <- inner_join(teamStatsNcaaYearly, t, na_matches = "never")
 teamStatsNcaaYearly$league <- 'NCAA'
+teamStatsNcaaYearly <- teamStatsNcaaYearly %>% ungroup
 
 print('NCAA Stats Loaded')
 

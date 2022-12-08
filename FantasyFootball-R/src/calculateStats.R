@@ -166,8 +166,8 @@ t3 <- t3 %>%
   dplyr::filter(ncaa_position == 'RB' | ncaa_position == 'WR' | ncaa_position == 'TE') %>%
   select(-position, -rec_position)
 
-t <- left_join(left_join(t, t2), t3)
-t$dom <- if_else(t$ncaa_position == 'RB', mean((sum(rushing_yards + receiving_yards) / sum(rushing_yards_team + receiving_yards_team)), (sum(rushing_tds + receiving_tds) / sum(rushing_tds_team + receiving_tds_team))), mean((receiving_yards / receiving_yards_team), (receiving_tds / receiving_tds_team)))
+t <- inner_join(inner_join(t, t2), t3)
+t$dom <- if_else(t$ncaa_position == 'RB', (((t$rushing_yards + t$receiving_yards) / (t$rushing_yards_team + t$receiving_yards_team)) + ((t$rushing_tds + t$receiving_tds) / (t$rushing_tds_team + t$receiving_tds_team))) / 2, ((t$receiving_yards / t$receiving_yards_team) + (t$receiving_tds / t$receiving_tds_team)) / 2)
 
 t <- distinct(t)
 
