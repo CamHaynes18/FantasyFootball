@@ -160,7 +160,7 @@ t2 <- teamStatsYearly %>%
   select(team, season, rushing_yards_team, rushing_tds_team, receiving_yards_team, receiving_tds_team)
 t3 <- roster %>%
   dplyr::filter(is.na(athlete_id) == FALSE) %>%
-  select(name, athlete_id, position, ncaa_position, rec_position)
+  select(athlete_id, position, ncaa_position, rec_position)
 t3$ncaa_position <- if_else(is.na(t3$ncaa_position) == TRUE, if_else(is.na(t3$position) == FALSE, t3$position, t3$rec_position), t3$ncaa_position)
 t3 <- t3 %>%
   dplyr::filter(ncaa_position == 'RB' | ncaa_position == 'WR' | ncaa_position == 'TE') %>%
@@ -168,8 +168,29 @@ t3 <- t3 %>%
 
 t <- inner_join(inner_join(t, t2), t3)
 t$dom <- if_else(t$ncaa_position == 'RB', (((t$rushing_yards + t$receiving_yards) / (t$rushing_yards_team + t$receiving_yards_team)) + ((t$rushing_tds + t$receiving_tds) / (t$rushing_tds_team + t$receiving_tds_team))) / 2, ((t$receiving_yards / t$receiving_yards_team) + (t$receiving_tds / t$receiving_tds_team)) / 2)
+t$w_dom <- ifelse(t$ncaa_position == 'WR' | t$ncaa_position == 'TE', (0.8 * (t$receiving_yards / t$receiving_yards_team) + 0.2 * (t$receiving_tds / t$receiving_tds_team)), NA)
 
-t <- distinct(t)
+t <- distinct(t, .keep_all = TRUE)
+playerStatsYearly <- left_join(playerStatsYearly, t %>%
+                                 select(athlete_id, season, dom, w_dom))
+
+t <- t %>%
+  dplyr::filter(ncaa_position == 'RB') %>%
+  select(athlete_id, team, season, rushing_yards, rushing_tds, receiving_yards, receiving_tds)
+t2 <- t %>%
+  select(-athlete_id) %>%
+  group_by(team, season) %>%
+  summarise_all(sum, na.rm=T)
+colnames(t2) <- paste(colnames(t2), 'team', sep = '_')
+t2 <- t2 %>%
+  rename(team = team_team,
+         season = season_team)
+t <- inner_join(t, t2)
+
+t$bf_dom <- (((t$rushing_yards + t$receiving_yards) / (t$rushing_yards_team + t$receiving_yards_team)) + ((t$rushing_tds + t$receiving_tds) / (t$rushing_tds_team + t$receiving_tds_team))) / 2
+t <- distinct(t, .keep_all = TRUE)
+playerStatsYearly <- left_join(playerStatsYearly, t %>%
+                                 select(athlete_id, season, bf_dom))
 
 arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
 

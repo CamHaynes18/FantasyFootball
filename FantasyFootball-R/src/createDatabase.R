@@ -24,6 +24,7 @@ teamStatsWeekly <- teamStatsWeekly %>%
          season = season_team,
          week = week_team)
 teamStatsWeekly$league <- 'NFL'
+teamStatsWeekly <- teamStatsWeekly %>% ungroup
 
 print('NFL Weekly Stats Loaded')
 
@@ -162,7 +163,7 @@ teamStatsNcaaWeekly <- teamStatsNcaaWeekly %>%
          season = season_team,
          week = week_team)
 teamStatsNcaaWeekly$league <- 'NCAA'
-teamStatsNcaaWeekly <- teamStatsWeekly %>% ungroup
+teamStatsNcaaWeekly <- teamStatsNcaaWeekly %>% ungroup
 
 playerStatsNcaaYearly <- playerStatsNcaaWeekly %>%
   group_by(athlete_id, season) %>%
