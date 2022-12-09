@@ -111,7 +111,7 @@ t <- playerStatsYearly %>%
   mutate(ypa = passing_yards / attempts,
          ypc = rushing_yards / carries,
          ypr = receiving_yards / receptions,
-         ypt = sum(rushing_yards + receiving_yards) / sum(carries + receptions),
+         yptouch = sum(rushing_yards + receiving_yards) / sum(carries + receptions),
          comp_perc = completions / attempts,
          int_rate = interceptions / attempts,
          td_rate = passing_tds / attempts,
@@ -121,7 +121,7 @@ t <- playerStatsYearly %>%
 t$ypa <- gsub(Inf, NA, t$ypa)
 t$ypc <- gsub(Inf, NA, t$ypc)
 t$ypr <- gsub(Inf, NA, t$ypr)
-t$ypt <- gsub(Inf, NA, t$ypt)
+t$yptouch <- gsub(Inf, NA, t$yptouch)
 t$comp_perc <- gsub(Inf, NA, t$comp_perc)
 t$int_rate <- gsub(Inf, NA, t$int_rate)
 t$td_rate <- gsub(Inf, NA, t$td_rate)
@@ -136,17 +136,45 @@ playerStatsYearly <- left_join(playerStatsYearly, t)
 ### Changes playerStatsYearly - Requires playerStatsYearly, teamStatsYearly ###
 
 # Receiving Yards per Team Pass Attempt & Average Yards per Team Play
-teamStatsTemp <- teamStats %>%
-  select(-games)
-t <- left_join(playerStats, teamStatsTemp) %>%
-  dplyr::filter(league == 'NCAA' & is.na(athlete_id) == FALSE) %>%
-  group_by(athlete_id) %>%
-  mutate(ncaa_ryptpa = sum(receiving_yards) / sum(attempts_team),
-         ncaa_ayptp = sum(rushing_yards + receiving_yards) / sum(carries_team + attempts_team)) %>%
-  select(athlete_id, ncaa_ryptpa, ncaa_ayptp)
-t <- distinct(t, athlete_id, .keep_all = TRUE)
-recruiting <- left_join(recruiting, t, na_matches = "never")
+# teamStatsTemp <- teamStats %>%
+#   select(-games)
+# t <- left_join(playerStats, teamStatsTemp) %>%
+#   dplyr::filter(league == 'NCAA' & is.na(athlete_id) == FALSE) %>%
+#   group_by(athlete_id) %>%
+#   mutate(ncaa_ryptpa = sum(receiving_yards) / sum(attempts_team),
+#          ncaa_ayptp = sum(rushing_yards + receiving_yards) / sum(carries_team + attempts_team)) %>%
+#   select(athlete_id, ncaa_ryptpa, ncaa_ayptp)
+# t <- distinct(t, athlete_id, .keep_all = TRUE)
+# recruiting <- left_join(recruiting, t, na_matches = "never")
 
+
+
+### Changes playerStatsYearly - Requires playerStatsYearly, roster ###
+
+# QBR
+t <- nflreadr::load_espn_qbr(league = 'college', seasons = TRUE) %>%
+  dplyr::select(-week, -week_text, -name_display, -player_uid, -player_guid, -name_first, -name_last, -name_short, -age, -team_name, -team_short_name, -exp_sack, -penalty, -qbr_raw, -sack, -slug, -team_id, -team_uid, -headshot_href) %>%
+  rename(qbr = qbr_total,
+         espn_id = player_id)
+t <- distinct(t, espn_id, season, .keep_all = TRUE)
+
+t2 <- roster %>%
+  dplyr::filter(is.na(athlete_id) == FALSE & is.na(espn_id) == FALSE) %>%
+  select(athlete_id, espn_id)
+
+t3 <- left_join(t, t2) %>%
+  dplyr::filter(is.na(athlete_id) == FALSE) %>%
+  select(athlete_id, season, qbr)
+
+t2 <- roster %>%
+  dplyr::filter((position == 'QB' | ncaa_position == 'QB') & is.na(athlete_id) == FALSE) %>%
+  select(athlete_id)
+
+t4 <- left_join(t2, anti_join(t, t3) %>% select(espn_id, season, qbr) %>% rename(athlete_id = espn_id)) %>%
+  dplyr::filter(is.na(athlete_id) == FALSE & is.na(season) == FALSE)
+
+t3 <- distinct(bind_rows(t3, t4), athlete_id, season, .keep_all = TRUE)
+playerStatsYearly <- left_join(playerStatsYearly, t3)
 
 
 ### Changes playerStatsYearly - Requires playerStatsYearly, teamStatsYearly, roster ###
@@ -210,15 +238,6 @@ roster$speed_score <- (roster$combine_wt * 200) / ((roster$forty) ^ 4)
 roster$hass <- ifelse(roster$position == 'WR', roster$speed_score * (roster$combine_ht / 73), ifelse(roster$position == 'TE', roster$speed_score * (roster$combine_ht / 76.4), NA))
 roster$burst_score <- 89.117 + 31.137 * ((roster$broad_jump - min(roster$broad_jump, na.rm = TRUE)) / (max(roster$broad_jump, na.rm = TRUE) - min(roster$broad_jump, na.rm = TRUE))) + ((roster$vertical - min(roster$vertical, na.rm = TRUE)) / (max(roster$vertical, na.rm = TRUE) - min(roster$vertical, na.rm = TRUE)))
 roster$agility_score <- roster$cone + roster$shuttle
-
-# QBR
-# t <- nflreadr::load_espn_qbr(league = 'college', seasons = TRUE) %>%
-#   dplyr::select(-week, -week_text, -name_display, -player_uid, -player_guid, -name_first, -name_last, -name_short, -age, -team_name, -team_short_name, -exp_sack, -penalty, -qbr_raw, -sack, -slug, -team_id, -team_uid, -headshot_href) %>%
-#   rename(qbr = qbr_total,
-#          espn_id = player_id)
-# t <- distinct(t, espn_id, .keep_all = TRUE)
-# t <- roster %>%
-#   dplyr::filter(is.na(espn_id) == FALSE & is.na(athlete_id) == FALSE & position == 'QB')
 
 arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
 
