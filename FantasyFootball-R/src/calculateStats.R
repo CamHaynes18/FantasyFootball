@@ -10,7 +10,7 @@ t <- roster %>%
   dplyr::filter(is.na(athlete_id) == FALSE & is.na(freshman_year) == FALSE)
 playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never")
 playerStatsYearly$year_in_league <- if_else(playerStatsYearly$league == 'NFL', playerStatsYearly$season - playerStatsYearly$rookie_year + 1, playerStatsYearly$season - playerStatsYearly$freshman_year + 1)
-playerStatsYearly$year_in_league <- if_else(playerStatsYearly$year_in_league <= 0, NA, playerStatsYearly$year_in_league)
+playerStatsYearly$year_in_league <- ifelse(playerStatsYearly$year_in_league <= 0, NA, playerStatsYearly$year_in_league)
 playerStatsYearly <- playerStatsYearly %>%
   select(-rookie_year, -freshman_year)
 ###
@@ -238,6 +238,29 @@ roster$speed_score <- (roster$combine_wt * 200) / ((roster$forty) ^ 4)
 roster$hass <- ifelse(roster$position == 'WR', roster$speed_score * (roster$combine_ht / 73), ifelse(roster$position == 'TE', roster$speed_score * (roster$combine_ht / 76.4), NA))
 roster$burst_score <- 89.117 + 31.137 * ((roster$broad_jump - min(roster$broad_jump, na.rm = TRUE)) / (max(roster$broad_jump, na.rm = TRUE) - min(roster$broad_jump, na.rm = TRUE))) + ((roster$vertical - min(roster$vertical, na.rm = TRUE)) / (max(roster$vertical, na.rm = TRUE) - min(roster$vertical, na.rm = TRUE)))
 roster$agility_score <- roster$cone + roster$shuttle
+
+
+
+### Changes roster - Requires roster, playerStatsYearly ###
+
+# Breakout Year, Breakout Age 
+t <- playerStatsYearly %>%
+  dplyr::filter(is.na(athlete_id) == FALSE & (dom >= 0.15 | qbr >= 50)) %>%
+  select(athlete_id, season, year_in_league, dom, qbr)
+
+t2 <- roster %>%
+  dplyr::filter(is.na(athlete_id) == FALSE) %>%
+  select(athlete_id, birth_date, position, ncaa_position, rec_position)
+t2$ncaa_position <- if_else(is.na(t2$ncaa_position) == TRUE, if_else(is.na(t2$position) == FALSE, t2$position, t2$rec_position), t2$ncaa_position)
+t2 <- t2 %>%
+  dplyr::filter(ncaa_position == 'QB' | ncaa_position == 'RB' | ncaa_position == 'WR' | ncaa_position == 'TE') %>%
+  select(-position, -rec_position)
+
+t3 <- left_join(t, t2)
+
+
+t <- t[order(-t$dom, -t$qbr),]
+t <- distinct(t, athlete_id, .keep_all = TRUE)
 
 arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
 
