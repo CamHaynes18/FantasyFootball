@@ -221,8 +221,6 @@ t <- distinct(t, .keep_all = TRUE)
 playerStatsYearly <- left_join(playerStatsYearly, t %>%
                                  select(athlete_id, season, bf_dom))
 
-#arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
-
 
 
 ### Changes roster - Requires roster ###
@@ -263,6 +261,7 @@ t3 <- left_join(t, t2)
 t <- t[order(-t$dom, -t$qbr),]
 t <- distinct(t, athlete_id, .keep_all = TRUE)
 
+#arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
 #arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
 
 
