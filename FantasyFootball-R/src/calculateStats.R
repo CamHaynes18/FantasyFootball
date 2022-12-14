@@ -18,6 +18,7 @@ playerStatsYearly <- playerStatsYearly %>%
 
 ### Calculate first 3 years/career avg fantasy points per game ###
 # Changes roster
+maxYear <- nflreadr::get_latest_season()
 t <- playerStatsYearly %>%
   dplyr::filter(league == 'NFL' & is.nan(fantasy_points_hppr) == FALSE) %>%
   select(gsis_id, fantasy_points_hppr, games) %>%
@@ -117,7 +118,7 @@ t <- playerStatsYearly %>%
          td_rate = passing_tds / attempts,
          td_int_rate = td_rate / int_rate,
          aya = (sum(passing_yards) + (20 * sum(passing_tds)) - (45 * sum(interceptions))) / sum(attempts)) %>%
-  select(athlete_id, gsis_id, season, ypa, ypc, ypr, ypt, comp_perc, int_rate, td_rate, td_int_rate, aya)
+  select(athlete_id, gsis_id, season, ypa, ypc, ypr, yptouch, comp_perc, int_rate, td_rate, td_int_rate, aya)
 t$ypa <- gsub(Inf, NA, t$ypa)
 t$ypc <- gsub(Inf, NA, t$ypc)
 t$ypr <- gsub(Inf, NA, t$ypr)
@@ -220,14 +221,14 @@ t <- distinct(t, .keep_all = TRUE)
 playerStatsYearly <- left_join(playerStatsYearly, t %>%
                                  select(athlete_id, season, bf_dom))
 
-arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
+#arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
 
 
 
 ### Changes roster - Requires roster ###
 
 # BMI
-roster$bmi <- (roster$wt * 0.453592) / ((roster$ht * 0.0254) ^ 2)
+roster$bmi <- (roster$wt * 0.453592) / ((as.numeric(roster$ht) * 0.0254) ^ 2)
 roster$combine_bmi <- (roster$combine_wt * 0.453592) / ((roster$combine_ht * 0.0254) ^ 2)
 
 # Early Declares
@@ -262,7 +263,7 @@ t3 <- left_join(t, t2)
 t <- t[order(-t$dom, -t$qbr),]
 t <- distinct(t, athlete_id, .keep_all = TRUE)
 
-arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
+#arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
 
 
 
