@@ -255,11 +255,19 @@ t2 <- t2 %>%
   dplyr::filter(ncaa_position == 'QB' | ncaa_position == 'RB' | ncaa_position == 'WR' | ncaa_position == 'TE') %>%
   select(-position, -rec_position)
 
-t3 <- left_join(t, t2)
+t <- left_join(t, t2) %>%
+  dplyr::filter(ncaa_position == 'QB' | ncaa_position == 'RB' | (ncaa_position == 'WR'  & dom >= 0.2) | ncaa_position == 'TE')
 
 
-t <- t[order(-t$dom, -t$qbr),]
+t <- t[order(t$season),]
 t <- distinct(t, athlete_id, .keep_all = TRUE)
+t$boy <- t$year_in_league
+t$bos <- t$season
+t$boa <- lubridate::time_length(difftime(as.Date(paste(t$season, '09-01', sep = '-')), t$birth_date), 'years')
+t <- t %>%
+  select(athlete_id, bos, boy, boa)
+
+roster <- left_join(roster, t)
 
 #arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
 #arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
