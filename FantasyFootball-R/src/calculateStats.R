@@ -1,104 +1,3 @@
-### Calculate year in each league ###
-# Changes playerStatsYearly
-t <- roster %>%
-  select(gsis_id, rookie_year) %>%
-  dplyr::filter(is.na(gsis_id) == FALSE & is.na(rookie_year) == FALSE)
-playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never")
-
-t <- roster %>%
-  select(athlete_id, freshman_year) %>%
-  dplyr::filter(is.na(athlete_id) == FALSE & is.na(freshman_year) == FALSE)
-playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never")
-playerStatsYearly$year_in_league <- if_else(playerStatsYearly$league == 'NFL', playerStatsYearly$season - playerStatsYearly$rookie_year + 1, playerStatsYearly$season - playerStatsYearly$freshman_year + 1)
-playerStatsYearly$year_in_league <- ifelse(playerStatsYearly$year_in_league <= 0, NA, playerStatsYearly$year_in_league)
-playerStatsYearly <- playerStatsYearly %>%
-  select(-rookie_year, -freshman_year)
-###
-
-
-### Calculate first 3 years/career avg fantasy points per game ###
-# Changes roster
-maxYear <- nflreadr::get_latest_season()
-t <- playerStatsYearly %>%
-  dplyr::filter(league == 'NFL' & is.nan(fantasy_points_hppr) == FALSE) %>%
-  select(gsis_id, fantasy_points_hppr, games) %>%
-  group_by(gsis_id) %>%
-  mutate(ppg_career = sum(fantasy_points_hppr) / sum(games)) %>%
-  select(-fantasy_points_hppr, -games)
-t <- distinct(t, gsis_id, .keep_all = TRUE)
-roster <- left_join(roster, t, na_matches = "never")
-
-t <- playerStatsYearly %>%
-  dplyr::filter(season == maxYear & games >= 4 & league == 'NFL' & is.nan(fantasy_points_hppr) == FALSE) %>%
-  select(gsis_id, fantasy_points_hppr, games) %>%
-  group_by(gsis_id) %>%
-  mutate(ppg_last_yr = sum(fantasy_points_hppr) / sum(games)) %>%
-  select(-fantasy_points_hppr, -games)
-t <- distinct(t, gsis_id, .keep_all = TRUE)
-roster <- left_join(roster, t, na_matches = "never")
-
-t <- playerStatsYearly %>%
-  dplyr::filter(season > (maxYear - 3) & league == 'NFL' & is.nan(fantasy_points_hppr) == FALSE) %>%
-  select(gsis_id, fantasy_points_hppr, games) %>%
-  group_by(gsis_id) %>%
-  mutate(ppg_last_3yr = sum(fantasy_points_hppr) / sum(games)) %>%
-  select(-fantasy_points_hppr, -games)
-t <- distinct(t, gsis_id, .keep_all = TRUE)
-roster <- left_join(roster, t, na_matches = "never")
-
-t <- playerStatsYearly %>%
-  dplyr::filter(year_in_league <= 3 & league == 'NFL' & is.nan(fantasy_points_hppr) == FALSE) %>%
-  select(gsis_id, fantasy_points_hppr, games) %>%
-  group_by(gsis_id) %>%
-  mutate(ppg_first_3yr = sum(fantasy_points_hppr) / sum(games)) %>%
-  select(-fantasy_points_hppr, -games)
-t <- distinct(t, gsis_id, .keep_all = TRUE)
-roster <- left_join(roster, t, na_matches = "never")
-###
-
-### Calculate rank of each years fantasy finishes ###
-# Changes playerStatsYearly
-t <- roster %>%
-  select(gsis_id, position) %>%
-  dplyr::filter(is.na(gsis_id) == FALSE & is.na(position) == FALSE)
-
-t <- left_join(playerStatsYearly, t, na_matches = "never") %>%
-  dplyr::filter(league == 'NFL' & is.na(gsis_id) == FALSE & is.na(position) == FALSE & is.na(season) == FALSE & is.nan(fantasy_points_hppr) == FALSE) %>%
-  group_by(season, position) %>%
-  mutate(pos_rank = rank(-fantasy_points_hppr)) %>%
-  select(season, gsis_id, pos_rank, position)
-
-playerStatsYearly <- left_join(playerStatsYearly, t, na_matches = "never") %>%
-  select(-position)
-###
-
-### Calculate # of top 6/12/24 fantasy finishes ###
-# Changes roster
-t <- playerStatsYearly %>%
-  dplyr::filter(league == 'NFL' & pos_rank <= 6) %>%
-  add_count(gsis_id) %>%
-  select(gsis_id, n) %>%
-  rename(top6 = n)
-t <- distinct(t, gsis_id, .keep_all = TRUE)
-roster <- left_join(roster, t, na_matches = "never")
-t <- playerStatsYearly %>%
-  dplyr::filter(league == 'NFL' & pos_rank <= 12) %>%
-  add_count(gsis_id) %>%
-  select(gsis_id, n) %>%
-  rename(top12 = n)
-t <- distinct(t, gsis_id, .keep_all = TRUE)
-roster <- left_join(roster, t, na_matches = "never")
-t <- playerStatsYearly %>%
-  dplyr::filter(league == 'NFL' & pos_rank <= 24) %>%
-  add_count(gsis_id) %>%
-  select(gsis_id, n) %>%
-  rename(top24 = n)
-t <- distinct(t, gsis_id, .keep_all = TRUE)
-roster <- left_join(roster, t, na_matches = "never")
-###
-
-
-
 ### Calculate Advanced Stats ###
 
 
@@ -106,47 +5,43 @@ roster <- left_join(roster, t, na_matches = "never")
 ### Changes playerStatsYearly - Requires playerStatsYearly ###
 
 # YPA, YPC, YPR, YPT, Completion %, Int Rate, TD Rate, TD-Int Rate
-t <- playerStatsYearly %>%
-  #dplyr::filter(league == "NCAA" & is.na(athlete_id) == FALSE) %>%
-  group_by(athlete_id, gsis_id, season) %>%
-  mutate(ypa = passing_yards / attempts,
-         ypc = rushing_yards / carries,
-         ypr = receiving_yards / receptions,
-         yptouch = sum(rushing_yards + receiving_yards) / sum(carries + receptions),
-         comp_perc = completions / attempts,
-         int_rate = interceptions / attempts,
-         td_rate = passing_tds / attempts,
-         td_int_rate = td_rate / int_rate,
-         aya = (sum(passing_yards) + (20 * sum(passing_tds)) - (45 * sum(interceptions))) / sum(attempts)) %>%
-  select(athlete_id, gsis_id, season, ypa, ypc, ypr, yptouch, comp_perc, int_rate, td_rate, td_int_rate, aya)
-t$ypa <- gsub(Inf, NA, t$ypa)
-t$ypc <- gsub(Inf, NA, t$ypc)
-t$ypr <- gsub(Inf, NA, t$ypr)
-t$yptouch <- gsub(Inf, NA, t$yptouch)
-t$comp_perc <- gsub(Inf, NA, t$comp_perc)
-t$int_rate <- gsub(Inf, NA, t$int_rate)
-t$td_rate <- gsub(Inf, NA, t$td_rate)
-t$td_int_rate <- gsub(Inf, NA, t$td_int_rate)
-t$aya <- gsub(Inf, NA, t$aya)
-t <- na_if(t, NaN)
-t <- distinct(t, .keep_all = TRUE)
-playerStatsYearly <- left_join(playerStatsYearly, t)
+playerStatsYearly$ypa <- gsub(Inf, NA, playerStatsYearly$passing_yards / playerStatsYearly$attempts)
+playerStatsYearly$ypc <- gsub(Inf, NA, playerStatsYearly$rushing_yards / playerStatsYearly$carries)
+playerStatsYearly$ypr <- gsub(Inf, NA, playerStatsYearly$receiving_yards / playerStatsYearly$receptions)
+playerStatsYearly$yptouch <- gsub(Inf, NA, (playerStatsYearly$rushing_yards + playerStatsYearly$receiving_yards) / (playerStatsYearly$carries + playerStatsYearly$receptions))
+playerStatsYearly$comp_perc <- gsub(Inf, NA, playerStatsYearly$completions / playerStatsYearly$attempts)
+playerStatsYearly$int_rate <- gsub(Inf, NA, playerStatsYearly$interceptions / playerStatsYearly$attempts)
+playerStatsYearly$td_rate <- gsub(Inf, NA, playerStatsYearly$passing_tds / playerStatsYearly$attempts)
+playerStatsYearly$aya <- gsub(Inf, NA, (playerStatsYearly$passing_yards + (20 * playerStatsYearly$passing_tds)) - ((45 * playerStatsYearly$interceptions) / playerStatsYearly$attempts))
+playerStatsYearly$td_int_rate <- gsub(Inf, NA, as.numeric(playerStatsYearly$td_rate) / as.numeric(playerStatsYearly$int_rate))
+
+playerStatsYearly <- na_if(playerStatsYearly, NaN)
 
 
 
 ### Changes playerStatsYearly - Requires playerStatsYearly, teamStatsYearly ###
 
-# Receiving Yards per Team Pass Attempt & Average Yards per Team Play
-# teamStatsTemp <- teamStats %>%
-#   select(-games)
-# t <- left_join(playerStats, teamStatsTemp) %>%
-#   dplyr::filter(league == 'NCAA' & is.na(athlete_id) == FALSE) %>%
-#   group_by(athlete_id) %>%
-#   mutate(ncaa_ryptpa = sum(receiving_yards) / sum(attempts_team),
-#          ncaa_ayptp = sum(rushing_yards + receiving_yards) / sum(carries_team + attempts_team)) %>%
-#   select(athlete_id, ncaa_ryptpa, ncaa_ayptp)
-# t <- distinct(t, athlete_id, .keep_all = TRUE)
-# recruiting <- left_join(recruiting, t, na_matches = "never")
+# RYPTPA, AYPTP, 
+t <- teamStatsYearly %>%
+  select(team, season, completions_team, attempts_team, passing_yards_team, passing_tds_team, carries_team, rushing_yards_team, rushing_tds_team, receptions_team, receiving_yards_team, receiving_tds_team)
+t <- left_join(playerStatsYearly, t, na_matches = "never")
+
+t$carries_ms = gsub(Inf, NA, t$carries / t$carries_team)
+t$rushing_yards_ms = gsub(Inf, NA, t$rushing_yards / t$rushing_yards_team)
+t$rushing_tds_ms = gsub(Inf, NA, t$rushing_tds / t$rushing_tds_team)
+t$ypc_over_team <- gsub(Inf, NA, (t$rushing_yards / t$carries) - ((t$rushing_yards_team - t$rushing_yards) / (t$carries_team - t$carries)))
+t$receptions_ms = gsub(Inf, NA, t$receptions / t$receptions_team)
+t$receiving_yards_ms = gsub(Inf, NA, t$receiving_yards / t$receiving_yards_team)
+t$receiving_tds_ms = gsub(Inf, NA, t$receiving_tds / t$receiving_tds_team)
+t$ryptpa = gsub(Inf, NA, t$receiving_yards / t$attempts_team)
+t$yptp = gsub(Inf, NA, (t$passing_yards + t$rushing_yards + t$receiving_yards) / (t$carries_team + t$attempts_team))
+t$ayptp = gsub(Inf, NA, (t$passing_yards + t$rushing_yards + (2 * t$receiving_yards)) / (t$carries_team + t$attempts_team))
+t$tdptp = gsub(Inf, NA, (t$passing_tds + t$rushing_tds + t$receiving_tds) / (t$carries_team + t$attempts_team))
+
+t <- na_if(t, NaN) %>%
+  select(athlete_id, gsis_id, season, carries_ms, rushing_yards_ms, rushing_tds_ms, ypc_over_team, receptions_ms, receiving_yards_ms, receiving_tds_ms, ryptpa, yptp, ayptp, tdptp)
+
+playerStatsYearly <- left_join(playerStatsYearly, t)
 
 
 
@@ -269,8 +164,13 @@ t <- t %>%
 
 roster <- left_join(roster, t)
 
-#arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
-#arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
+rm(t, t2, t3, t4)
+
+
+
+# Write to Parquet
+arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
+arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
 
 
 
