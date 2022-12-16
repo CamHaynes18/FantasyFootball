@@ -1,6 +1,10 @@
 # Take snapshot of R environment
 renv::snapshot()
 
+# Restore R environment
+# To reproduce the environment on another machine
+renv::restore()
+
 # Update R
 installr::updateR()
 
@@ -11,7 +15,7 @@ update.packages()
 usethis::edit_r_profile()
 usethis::edit_r_environ()
 
-
+options(parallelly.makeNodePSOCK.setup_strategy = "sequential")
 
 # get my working directory
 getwd()
