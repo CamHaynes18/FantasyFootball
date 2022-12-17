@@ -10,6 +10,7 @@ import pandas as pd
 databaseFolder = r'Y:\Fantasy Football\Database'
 
 # Step 0: Input and clean data
-df = pd.read_parquet(databaseFolder + r'\roster.parquet')
+roster = pd.read_parquet(databaseFolder + r'\roster.parquet')
+playerStatsYearly = pd.read_parquet(databaseFolder + r'\playerStatsYearly.parquet')
 
 print('test')
