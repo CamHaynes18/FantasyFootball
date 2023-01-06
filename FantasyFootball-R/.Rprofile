@@ -3,7 +3,7 @@ source("renv/activate.R")
 cat('Using Project .Rprofile\n')
 
 # Update R
-installr::updateR()
+#installr::updateR()
 
 # Update Packages
 #update.packages(c('nflverse', 'cfbfastR', 'tidyverse'))

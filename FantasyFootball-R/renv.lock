@@ -69,10 +69,10 @@
     },
     "arrow": {
       "Package": "arrow",
-      "Version": "10.0.0",
+      "Version": "10.0.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "05f9b803e1f6a5d47ff0a885ed04ebd2",
+      "Hash": "74b551e105beb7ee0fae1f7861668bac",
       "Requirements": [
         "R6",
         "assertthat",
@@ -246,10 +246,10 @@
     },
     "cli": {
       "Package": "cli",
-      "Version": "3.4.1",
+      "Version": "3.5.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "0d297d01734d2bcea40197bd4971a764",
+      "Hash": "eb9fc121ad9a1075c471107ef185be46",
       "Requirements": []
     },
     "clipr": {
@@ -499,10 +499,10 @@
     },
     "future": {
       "Package": "future",
-      "Version": "1.29.0",
+      "Version": "1.30.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "783c201d2edfee73263de8e17cbdfa8e",
+      "Hash": "d8a0dcbc9350c1e40edc644611d1ee15",
       "Requirements": [
         "digest",
         "globals",
@@ -995,10 +995,10 @@
     },
     "nflfastR": {
       "Package": "nflfastR",
-      "Version": "4.5.0",
+      "Version": "4.5.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "83e8a617efb877099771495fa1bbfa20",
+      "Hash": "65c0d5935d3960efd68c1e8cad08b7a7",
       "Requirements": [
         "cli",
         "curl",
@@ -1042,10 +1042,10 @@
     },
     "nflreadr": {
       "Package": "nflreadr",
-      "Version": "1.3.1",
+      "Version": "1.3.2",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "49af7a041790ed32b5bf9838d97061d0",
+      "Hash": "0595540c45da7c44a73c3d42c8315cb7",
       "Requirements": [
         "cachem",
         "cli",
@@ -1059,24 +1059,21 @@
     },
     "nflseedR": {
       "Package": "nflseedR",
-      "Version": "1.1.0",
+      "Version": "1.2.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "b95fd32a406450306bce3db3b4c0f037",
+      "Hash": "c03fd7b6f93879421419d4b3baf67b85",
       "Requirements": [
         "cli",
-        "crayon",
-        "curl",
+        "data.table",
         "dplyr",
         "furrr",
         "future",
-        "glue",
         "gsubfn",
         "magrittr",
         "nflreadr",
         "progressr",
         "purrr",
-        "readr",
         "rlang",
         "tibble",
         "tidyr"
@@ -1131,10 +1128,10 @@
     },
     "parallelly": {
       "Package": "parallelly",
-      "Version": "1.32.1",
+      "Version": "1.33.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "9e3d8d65cb9c5ca5966340a6bfec60b2",
+      "Hash": "6d5c4a319b25b6df4600af95817ffbd5",
       "Requirements": []
     },
     "pillar": {
@@ -1221,13 +1218,16 @@
     },
     "purrr": {
       "Package": "purrr",
-      "Version": "0.3.5",
+      "Version": "1.0.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "54842a2443c76267152eface28d9e90a",
+      "Hash": "1ad491d27989ec6c26a2918ad6df116b",
       "Requirements": [
+        "cli",
+        "lifecycle",
         "magrittr",
-        "rlang"
+        "rlang",
+        "vctrs"
       ]
     },
     "rappdirs": {
@@ -1327,10 +1327,10 @@
     },
     "rmarkdown": {
       "Package": "rmarkdown",
-      "Version": "2.18",
+      "Version": "2.19",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "8063c4e953cefb651e8cd58c82c82d2d",
+      "Hash": "4e29299e1f4c7eabb0b8365b338adf3c",
       "Requirements": [
         "bslib",
         "evaluate",
@@ -1442,14 +1442,18 @@
     },
     "stringr": {
       "Package": "stringr",
-      "Version": "1.4.1",
+      "Version": "1.5.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "a66ad12140cd34d4f9dfcc19e84fc2a5",
+      "Hash": "671a4d384ae9d32fc47a14e98bfa3dc8",
       "Requirements": [
+        "cli",
         "glue",
+        "lifecycle",
         "magrittr",
-        "stringi"
+        "rlang",
+        "stringi",
+        "vctrs"
       ]
     },
     "sys": {
