@@ -18,4 +18,4 @@ require(tidyverse)
 require(gsisdecoder)
 
 # Define Database Path
-databasePath <- 'Y:/Fantasy Football/Database/'
+databasePath <- 'Z:/Fantasy Football/Database/'

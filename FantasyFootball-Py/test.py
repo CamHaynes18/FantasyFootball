@@ -8,7 +8,7 @@ import pandas as pd
 # # Train Test Split
 # from sklearn.model_selection import train_test_split
 
-databaseFolder = r'Y:\Fantasy Football\Database'
+databaseFolder = r'Z:\Fantasy Football'
 
 # Step 0: Input and clean data
 roster = pd.read_parquet(databaseFolder + r'\roster.parquet')

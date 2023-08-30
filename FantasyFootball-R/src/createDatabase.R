@@ -63,7 +63,8 @@ print('NFL Yearly Stats Loaded')
 
 
 # load college player stats back to 2004
-currentWeek <- nflreadr::get_current_week()
+#currentWeek <- nflreadr::get_current_week()
+currentWeek <- 15
 for(year in maxYear:2004)
 {
   if (year == maxYear)
@@ -368,7 +369,7 @@ rm(year, rosterNcaa, t, t2)
 
 # Load Relative Athletic Score .csv File, Left Join using name, position, rookie_year
 ras <- read.csv(paste(databasePath, 'ras.csv', sep = '')) %>%
-  select(-ï..Link, -College) %>%
+  select(-Link, -College) %>%
   dplyr::rename(merge_name = Name,
                 position = Pos,
                 rookie_year = Year,
