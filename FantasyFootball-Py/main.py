@@ -6,7 +6,7 @@ print('Script Started')
 # Record required packages in requirements.txt using pipreqs
 with open('requirements.txt', 'w') as file_:
     subprocess.Popen(['pip', 'freeze', '-l'], stdout=file_).communicate()
-
+shutil.move('requirements.txt', '../requirements.txt')
 print('requirements.txt Saved')
 
 # Backup Project Folder
@@ -17,6 +17,6 @@ print('requirements.txt Saved')
 #    print('Files Backed Up')
 
 # Call script
-#exec(open('src/prospectGrade.py').read())
+# exec(open('test.py').read())
 
 print('Script Complete')
