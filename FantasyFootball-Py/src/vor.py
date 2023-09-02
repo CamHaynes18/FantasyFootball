@@ -2,14 +2,16 @@ import pandas as pd
 import numpy as np
 from excelFormatting import get_col_widths
 
-
 fantasyFootballFolder = r'Z:\Fantasy Football'
 
-# leagueSettings = [[14, 1, 2, 2, 1, [['QB', 'RB', 'WR', 'TE']], 5],
-#                   [1 / 25, 1 / 25, 3.25, -2.75, .15, 1 / 10, 6, .75, 1 / 10, 6, -2]]
-leagueSettings = [[18, 1, 1, 1, 0, [[0, 'RB', 'WR', 0], [0, 'RB', 'WR', 0], [0, 0, 'WR', 'TE'], [0, 0, 'WR', 'TE']], 8],
-                  [.1, 1 / 25, 6, -2, .2, 1 / 10, 6, .5, 1 / 10, 6, -2]]
-
+# Picktown
+leagueSettings = [[14, 1, 2, 2, 1, [[1, 1, 1, 1]], 5],
+                  [1 / 25, 1 / 25, 3.25, -2.75, .15, 1 / 10, 6, .75, 1 / 10, 6, -2]]
+# PCOC
+# leagueSettings = [[18, 1, 1, 1, 0, [[0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 1, 1], [0, 0, 1, 1]], 8],
+#                   [.1, 1 / 25, 6, -2, .2, 1 / 10, 6, .5, 1 / 10, 6, -2]]
+# leagueSettings = [[10, 1, 3, 3, 1, [[0, 1, 1, 1], [0, 1, 1, 1], [0, 1, 1, 1]], 8],
+#                   [1 / 25, 1 / 25, 4, -2, 0, 1 / 10, 6, 1, 1 / 10, 6, -2]]
 
 qbProjections = pd.read_csv(fantasyFootballFolder + r'\Projections\FantasyPros_Fantasy_Football_Projections_QB.csv',
                             skip_blank_lines=True, thousands=',').dropna()
@@ -59,44 +61,45 @@ nonStarters = projections[
 
 # nonStarters.sort_values('Total Rank', inplace=True)
 temp = leagueSettings[0][6:10]
+maxQBs = 2 * leagueSettings[0][0] * leagueSettings[0][1]
 i = 0
 for flexSpot in leagueSettings[0][5]:
     flex = pd.DataFrame()
     if i == 0:
         nonFlex = pd.DataFrame()
-        if flexSpot[0] == 'QB':
+        if flexSpot[0] == 1:
             flex = pd.concat([flex, nonStarters[nonStarters['Pos'] == 'QB'].copy()])
         else:
             nonFlex = pd.concat([nonFlex, nonStarters[nonStarters['Pos'] == 'QB'].copy()])
 
-        if flexSpot[1] == 'RB':
+        if flexSpot[1] == 1:
             flex = pd.concat([flex, nonStarters[nonStarters['Pos'] == 'RB'].copy()])
         else:
             nonFlex = pd.concat([nonFlex, nonStarters[nonStarters['Pos'] == 'RB'].copy()])
 
-        if flexSpot[2] == 'WR':
+        if flexSpot[2] == 1:
             flex = pd.concat([flex, nonStarters[nonStarters['Pos'] == 'WR'].copy()])
         else:
             nonFlex = pd.concat([nonFlex, nonStarters[nonStarters['Pos'] == 'WR'].copy()])
 
-        if flexSpot[3] == 'TE':
+        if flexSpot[3] == 1:
             flex = pd.concat([flex, nonStarters[nonStarters['Pos'] == 'TE'].copy()])
         else:
             nonFlex = pd.concat([nonFlex, nonStarters[nonStarters['Pos'] == 'TE'].copy()])
     else:
-        if flexSpot[0] == 'QB':
+        if flexSpot[0] == 1:
             flex = pd.concat([flex, nonFlex[nonFlex['Pos'] == 'QB'].copy()])
             nonFlex = nonFlex[nonFlex['Pos'] != 'QB']
 
-        if flexSpot[1] == 'RB':
+        if flexSpot[1] == 1:
             flex = pd.concat([flex, nonFlex[nonFlex['Pos'] == 'RB'].copy()])
             nonFlex = nonFlex[nonFlex['Pos'] != 'RB']
 
-        if flexSpot[2] == 'WR':
+        if flexSpot[2] == 1:
             flex = pd.concat([flex, nonFlex[nonFlex['Pos'] == 'WR'].copy()])
             nonFlex = nonFlex[nonFlex['Pos'] != 'WR']
 
-        if flexSpot[3] == 'TE':
+        if flexSpot[3] == 1:
             flex = pd.concat([flex, nonFlex[nonFlex['Pos'] == 'TE'].copy()])
             nonFlex = nonFlex[nonFlex['Pos'] != 'TE']
 
@@ -107,13 +110,23 @@ for flexSpot in leagueSettings[0][5]:
 
     i += 1
 
-nonFlex.sort_values('Total Rank', inplace=True)
-nonBench = nonFlex.iloc[(leagueSettings[0][0] * leagueSettings[0][6]):].copy()
+    maxQBs = maxQBs + (leagueSettings[0][0] * flexSpot[0])
 
-qbReplacementValue = nonFlex[nonFlex['Pos'] == 'QB']['FPTS'].max()
-rbReplacementValue = nonFlex[nonFlex['Pos'] == 'RB']['FPTS'].max()
-wrReplacementValue = nonFlex[nonFlex['Pos'] == 'WR']['FPTS'].max()
-teReplacementValue = nonFlex[nonFlex['Pos'] == 'TE']['FPTS'].max()
+nonFlex.sort_values('Total Rank', inplace=True)
+temp = nonFlex.copy()
+nonBench = pd.DataFrame()
+for i in range(0, leagueSettings[0][0] * leagueSettings[0][6]):
+    if (temp.iloc[0, 2] == 'QB') & (temp.iloc[0, 17] > maxQBs):
+        nonBench = pd.concat([nonBench, temp[temp['Pos'] == 'QB'].copy()])
+        temp = temp[temp['Pos'] != 'QB']
+    temp = temp.iloc[1:]
+
+nonBench = pd.concat([nonBench, temp.copy()])
+
+qbBenchValue = nonFlex[nonFlex['Pos'] == 'QB']['FPTS'].max()
+rbBenchValue = nonFlex[nonFlex['Pos'] == 'RB']['FPTS'].max()
+wrBenchValue = nonFlex[nonFlex['Pos'] == 'WR']['FPTS'].max()
+teBenchValue = nonFlex[nonFlex['Pos'] == 'TE']['FPTS'].max()
 
 qbReplacementValue = nonBench[nonBench['Pos'] == 'QB']['FPTS'].max()
 rbReplacementValue = nonBench[nonBench['Pos'] == 'RB']['FPTS'].max()
@@ -125,17 +138,18 @@ conditions = [projections['Pos'] == 'QB',
               projections['Pos'] == 'WR',
               projections['Pos'] == 'TE']
 
+benchValues = [projections['FPTS'] - qbBenchValue,
+               projections['FPTS'] - rbBenchValue,
+               projections['FPTS'] - wrBenchValue,
+               projections['FPTS'] - teBenchValue]
+
 replacementValues = [projections['FPTS'] - qbReplacementValue,
-          projections['FPTS'] - rbReplacementValue,
-          projections['FPTS'] - wrReplacementValue,
-          projections['FPTS'] - teReplacementValue]
+                     projections['FPTS'] - rbReplacementValue,
+                     projections['FPTS'] - wrReplacementValue,
+                     projections['FPTS'] - teReplacementValue]
 
-benchValues = [projections['FPTS'] - qbReplacementValue,
-          projections['FPTS'] - rbReplacementValue,
-          projections['FPTS'] - wrReplacementValue,
-          projections['FPTS'] - teReplacementValue]
-
-projections['VOR'] = np.select(conditions, values)
+projections['VOB'] = np.select(conditions, benchValues)
+projections['VOR'] = np.select(conditions, replacementValues)
 projections.sort_values('VOR', ascending=False, inplace=True)
 projections.reset_index(drop=True, inplace=True)
 projections.index = projections.index + 1
@@ -146,8 +160,8 @@ projections['Round'] = projections['Pick'] / 14
 projections['Round'] = projections['Round'].apply(np.ceil)
 
 projections = projections[
-    ['Round', 'Pick', 'Player', 'Team', 'Pos', 'Pos Rank', 'Total Rank', 'VOR', 'FPTS', 'FPPG', 'PaATT', 'CMP', 'PaYDS', 'PaTDS', 'INTS', 'RuATT', 'RuYDS', 'RuTDS', 'REC', 'ReYDS',
-     'ReTDS', 'FL']]
+    ['Round', 'Pick', 'Player', 'Team', 'Pos', 'Pos Rank', 'Total Rank', 'VOB', 'VOR', 'FPTS', 'FPPG', 'PaATT', 'CMP',
+     'PaYDS', 'PaTDS', 'INTS', 'RuATT', 'RuYDS', 'RuTDS', 'REC', 'ReYDS', 'ReTDS', 'FL']]
 
 # Define output path
 outputPath = fantasyFootballFolder + r'\VOR.xlsx'
