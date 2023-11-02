@@ -15,7 +15,7 @@ playerStatsWeekly$fantasy_points_hppr <- rowMeans(subset(playerStatsWeekly, sele
 playerStatsWeekly$league <- 'NFL'
 
 teamStatsWeekly <- playerStatsWeekly %>%
-  select(-gsis_id, -season_type, -league) %>%
+  select(-gsis_id, -season_type, -opponent_team, -league) %>%
   group_by(team, season, week) %>%
   summarise_all(sum, na.rm=T)
 colnames(teamStatsWeekly) <- paste(colnames(teamStatsWeekly), 'team', sep = '_')
@@ -35,7 +35,7 @@ playerStatsYearly <- playerStatsWeekly %>%
   group_by(gsis_id, season) %>%
   summarise(games = n())
 t <- playerStatsWeekly %>%
-  select(-team, -week, -season_type, -league) %>%
+  select(-team, -week, -season_type, -opponent_team, -league) %>%
   group_by(gsis_id, season) %>%
   summarise_all(sum, na.rm=T)
 playerStatsYearly <- inner_join(playerStatsYearly, t, na_matches = "never")
@@ -61,10 +61,18 @@ teamStatsYearly <- teamStatsYearly %>% ungroup
 
 print('NFL Yearly Stats Loaded')
 
+try(t <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "passing") %>%
+      select(athlete_id, team, passing_completions, passing_att, passing_yds, passing_td, passing_int))
+print('NFL Yearly Stats Loaded')
 
 # load college player stats back to 2004
-#currentWeek <- nflreadr::get_current_week()
-currentWeek <- 15
+currentWeek <- nflreadr::get_current_week()
+#currentWeek <- 15
+categories <- list(list('category'='passing', 'columns'=c('athlete_id', 'team', 'passing_completions', 'passing_att', 'passing_yds', 'passing_td', 'passing_int')),
+                   list('category'='rushing', 'columns'=c('athlete_id', 'team', 'rushing_car', 'rushing_yds', 'rushing_td')),
+                   list('category'='receiving', 'columns'=c('athlete_id', 'team', 'receiving_rec', 'receiving_yds', 'receiving_td')),
+                   list('category'='kickReturns', 'columns'=c('athlete_id', 'team', 'kick_returns_no', 'kick_returns_yds', 'kick_returns_td')),
+                   list('category'='puntReturns', 'columns'=c('athlete_id', 'team', 'punt_returns_no', 'punt_returns_yds', 'punt_returns_td')))
 for(year in maxYear:2004)
 {
   if (year == maxYear)
@@ -107,6 +115,12 @@ for(year in maxYear:2004)
   }
   for (week in startWeek:endWeek)
   {
+    for (cat in categories)
+    {
+      
+    }
+    t <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = cat['category']) %>%
+      select(one_of(unlist(cat['columns'])))
     t <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "passing") %>%
       select(athlete_id, team, passing_completions, passing_att, passing_yds, passing_td, passing_int)
     t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "rushing") %>%
@@ -368,7 +382,7 @@ rm(year, rosterNcaa, t, t2)
 
 
 # Load Relative Athletic Score .csv File, Left Join using name, position, rookie_year
-ras <- read.csv(paste(databasePath, 'ras.csv', sep = '')) %>%
+ras <- read.csv(paste(databasePath, '\\ras.csv', sep = '')) %>%
   select(-Link, -College) %>%
   dplyr::rename(merge_name = Name,
                 position = Pos,
@@ -486,8 +500,8 @@ rm(maxYear, t)
 
 
 # Write to Parquet
-arrow::write_parquet(playerStatsWeekly, paste(databasePath, 'playerStatsWeekly.parquet', sep = ''))
-arrow::write_parquet(playerStatsYearly, paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
-arrow::write_parquet(teamStatsWeekly, paste(databasePath, 'teamStatsWeekly.parquet', sep = ''))
-arrow::write_parquet(teamStatsYearly, paste(databasePath, 'teamStatsYearly.parquet', sep = ''))
-arrow::write_parquet(roster, paste(databasePath, 'roster.parquet', sep = ''))
+arrow::write_parquet(playerStatsWeekly, paste(stagingPath, '\\playerStatsWeekly.parquet', sep = ''))
+arrow::write_parquet(playerStatsYearly, paste(stagingPath, '\\playerStatsYearly.parquet', sep = ''))
+arrow::write_parquet(teamStatsWeekly, paste(stagingPath, '\\teamStatsWeekly.parquet', sep = ''))
+arrow::write_parquet(teamStatsYearly, paste(stagingPath, '\\teamStatsYearly.parquet', sep = ''))
+arrow::write_parquet(roster, paste(stagingPath, '\\roster.parquet', sep = ''))

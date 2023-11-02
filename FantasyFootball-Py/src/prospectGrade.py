@@ -7,7 +7,7 @@ import pandas as pd
 # # Train Test Split
 # from sklearn.model_selection import train_test_split
 
-databaseFolder = r'Y:\Fantasy Football\Database'
+databaseFolder = r'\\192.168.1.223\swissFlashDrive\Fantasy Football\Database'
 
 # Step 0: Input and clean data
 df = pd.read_parquet(databaseFolder + r'\roster.parquet')

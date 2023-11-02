@@ -33,13 +33,16 @@ remove(list = ls())
 rm(list = setdiff(ls(), lsf.str()))
 
 
+# required packages
+install.packages('renv', dependencies = TRUE)
+install.packages('installr', dependencies = TRUE)
+install.packages('usethis', dependencies = TRUE)
+install.packages('tidyverse', dependencies = TRUE)
+install.packages('nflverse', dependencies = TRUE)
+install.packages('cfbfastR', dependencies = TRUE)
+install.packages('arrow', dependencies = TRUE)
 
-# install.packages('tidyquant', dependencies = TRUE)
-# install.packages('DataEditR', dependencies = TRUE)
-# library(tidyquant)
-# library(DataEditR)
-# 
-# playerInfoEdit <- data_edit(playerInfo)
+
 # install.packages('cfbfastR', dependencies = TRUE)
 # install.packages("cli")
 # install.packages("devtools")

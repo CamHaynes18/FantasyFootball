@@ -2,20 +2,16 @@ source("renv/activate.R")
 
 cat('Using Project .Rprofile\n')
 
-# Update R
-#installr::updateR()
-
-# Update Packages
-#update.packages(c('nflverse', 'cfbfastR', 'tidyverse'))
-
-# Take snapshot of R environment
-#renv::snapshot()
-
 # Load Packages
+require(tidyverse)
 require(nflverse)
 require(cfbfastR)
-require(tidyverse)
-require(gsisdecoder)
+require(arrow)
+# require(gsisdecoder)
 
 # Define Database Path
-databasePath <- 'Z:/Fantasy Football/Database/'
+prodPath <- '\\\\192.168.1.223\\swissFlashDrive\\Fantasy Football'
+backupPath <- '\\\\192.168.1.223\\toshibaHDD\\Fantasy Football'
+databasePath <- paste(prodPath, '\\Database', sep = '')
+stagingPath <- paste(databasePath, '\\staging', sep = '')
+devPath <- paste(databasePath, '\\dev', sep = '')
