@@ -1,18 +1,41 @@
-roster <- arrow::read_parquet(paste(databasePath, 'roster.parquet', sep = ''))
+roster <- arrow::read_parquet(paste(databasePath, '\\roster.parquet', sep = ''))
 
-playerStatsWeekly <- arrow::read_parquet(paste(databasePath, 'roster.parquet', sep = ''))
-teamStatsWeekly <- arrow::read_parquet(paste(databasePath, 'roster.parquet', sep = ''))
-playerStatsYearly <- arrow::read_parquet(paste(databasePath, 'playerStatsYearly.parquet', sep = ''))
-teamStatsYearly <- arrow::read_parquet(paste(databasePath, 'teamStatsYearly.parquet', sep = ''))
-
-
-# playerStatsNcaaWeekly <- arrow::read_parquet('Y:/Fantasy Football/Database/playerStatsNcaaWeekly.parquet')
-# teamStatsNcaaWeekly <- arrow::read_parquet('Y:/Fantasy Football/Database/teamStatsNcaaWeekly.parquet')
-# playerStatsNcaaYearly <- arrow::read_parquet('Y:/Fantasy Football/Database/playerStatsNcaaYearly.parquet')
-# teamStatsNcaaYearly <- arrow::read_parquet('Y:/Fantasy Football/Database/teamStatsNcaaYearly.parquet')
+playerStatsWeekly <- arrow::read_parquet(paste(databasePath, '\\playerStatsWeekly.parquet', sep = ''))
+teamStatsWeekly <- arrow::read_parquet(paste(databasePath, '\\teamStatsWeekly.parquet', sep = ''))
+playerStatsYearly <- arrow::read_parquet(paste(databasePath, '\\playerStatsYearly.parquet', sep = ''))
+teamStatsYearly <- arrow::read_parquet(paste(databasePath, '\\teamStatsYearly.parquet', sep = ''))
 
 
 
+write.csv(roster, paste(databasePath, '\\roster.csv', sep = ''), row.names = FALSE)
+
+
+
+roster <- read.csv(paste(databasePath, '\\roster.csv', sep = ''))
+arrow::write_parquet(roster, paste(databasePath, '\\roster.parquet', sep = ''))
+
+print('before')
+t1 <- try(cfbfastR::cfbd_stats_season_player(2022, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "passing"))
+t2 <- try(cfbfastR::cfbd_stats_season_player(2004, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "kickReturns"))
+t3 <- full_join(t, t2, na_matches = "never")
+print('after')
+
+print('before')
+try({t <- cfbfastR::cfbd_stats_season_player(2004, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "passing")
+t2 <- cfbfastR::cfbd_stats_season_player(2004, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "kickReturns")
+t <- full_join(t, t2, na_matches = "never")})
+try({t2 <- cfbfastR::cfbd_stats_season_player(2004, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "rushing")
+t <- full_join(t, t2, na_matches = "never")})
+print('after')
+
+for (week in 15:19)
+{
+  result <- try(cfbfastR::cfbd_stats_season_player(2022, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "passing"), silent = TRUE)
+  print(result)
+  if ('try-error' %in% class(result)) print(week)
+}
+
+if (inherits(result, 'try-error')) print(week)
 # Incomplete
 ## 
 

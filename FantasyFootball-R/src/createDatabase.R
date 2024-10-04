@@ -61,9 +61,6 @@ teamStatsYearly <- teamStatsYearly %>% ungroup
 
 print('NFL Yearly Stats Loaded')
 
-try(t <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "passing") %>%
-      select(athlete_id, team, passing_completions, passing_att, passing_yds, passing_td, passing_int))
-print('NFL Yearly Stats Loaded')
 
 # load college player stats back to 2004
 currentWeek <- nflreadr::get_current_week()
@@ -73,33 +70,34 @@ categories <- list(list('category'='passing', 'columns'=c('athlete_id', 'team', 
                    list('category'='receiving', 'columns'=c('athlete_id', 'team', 'receiving_rec', 'receiving_yds', 'receiving_td')),
                    list('category'='kickReturns', 'columns'=c('athlete_id', 'team', 'kick_returns_no', 'kick_returns_yds', 'kick_returns_td')),
                    list('category'='puntReturns', 'columns'=c('athlete_id', 'team', 'punt_returns_no', 'punt_returns_yds', 'punt_returns_td')))
+
+
+rm(playerStatsNcaa)
+categories[2:length(categories)]
 for(year in maxYear:2004)
 {
   if (year == maxYear)
   {
-    t <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "passing") %>%
-      select(athlete_id, team, passing_completions, passing_att, passing_yds, passing_td, passing_int)
-    t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "rushing") %>%
-      select(athlete_id, team, rushing_car, rushing_yds, rushing_td)
-    t <- full_join(t, t2, na_matches = "never")
-    t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "receiving") %>%
-      select(athlete_id, team, receiving_rec, receiving_yds, receiving_td)
-    t <- full_join(t, t2, na_matches = "never")
-    t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "kickReturns") %>%
-      select(athlete_id, team, kick_returns_no, kick_returns_yds, kick_returns_td)
-    t <- full_join(t, t2, na_matches = "never")
-    t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1, category = "puntReturns") %>%
-      select(athlete_id, team, punt_returns_no, punt_returns_yds, punt_returns_td)
-    playerStatsNcaa <- full_join(t, t2, na_matches = "never")
+    print('1')
+    print(categories[[1]]['category'])
+    pa <- cfbfastR::cfbd_stats_season_player(year, season_type = 'both', team = NULL, conference = NULL, start_week = 1, end_week = 1, category = categories[[1]]['category']) %>%
+      select(one_of(unlist(categories[[1]]['columns'])))
+    for (cat in categories[2:length(categories)])
+    {
+      tryCatch ({
+        print(cat['category'])
+        t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = 'both', team = NULL, conference = NULL, start_week = 1, end_week = 1, category = cat['category']) %>%
+          select(one_of(unlist(cat['columns'])))
+        t <- suppressMessages(full_join(t, t2, na_matches = 'never'))
+      }, error = function(e) {
+        message("Function returned no data")
+      })
+    }
+    playerStatsNcaa <- full_join(t, t2, na_matches = 'never')
     playerStatsNcaa$season <- year
     playerStatsNcaa$week <- 1
     playerStatsNcaa$league <- 'NCAA'
-    
-    # teamStatsNcaa <- cfbfastR::cfbd_stats_season_team(year, season_type = "both", team = NULL, conference = NULL, start_week = 1, end_week = 1) %>%
-    #   select(team, conference, season, pass_comps, pass_atts, net_pass_yds, pass_TDs, rush_atts, rush_yds, rush_TDs)
-    # teamStatsNcaa$week <- 1
-    # teamStatsNcaa$league <- 'NCAA'
-    
+
     startWeek <- 2
     endWeek <- currentWeek
   }
@@ -115,42 +113,48 @@ for(year in maxYear:2004)
   }
   for (week in startWeek:endWeek)
   {
-    for (cat in categories)
-    {
-      
-    }
-    t <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = cat['category']) %>%
-      select(one_of(unlist(cat['columns'])))
-    t <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "passing") %>%
-      select(athlete_id, team, passing_completions, passing_att, passing_yds, passing_td, passing_int)
-    t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "rushing") %>%
-      select(athlete_id, team, rushing_car, rushing_yds, rushing_td)
-    t <- full_join(t, t2, na_matches = "never")
-    t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "receiving") %>%
-      select(athlete_id, team, receiving_rec, receiving_yds, receiving_td)
-    t <- full_join(t, t2, na_matches = "never")
-    if (year >= 2009)
-    {
-      t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "kickReturns") %>%
-        select(athlete_id, team, kick_returns_no, kick_returns_yds, kick_returns_td)
-      t <- full_join(t, t2, na_matches = "never")
-    }
-    if (!(year == 2016 & week == 15))
-    {
-      t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "puntReturns") %>%
-        select(athlete_id, team, punt_returns_no, punt_returns_yds, punt_returns_td)
-      t <- full_join(t, t2, na_matches = "never")
-    }
-    t$season <- year
-    t$week <- week
-    t$league <- 'NCAA'
-    playerStatsNcaa <- playerStatsNcaa %>% bind_rows(t)
-    
-    # teamStatsTemp <- cfbfastR::cfbd_stats_season_team(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week) %>%
-    #   select(team, conference, season, pass_comps, pass_atts, net_pass_yds, pass_TDs, rush_atts, rush_yds, rush_TDs)
-    # teamStatsTemp$week <- week
-    # teamStatsTemp$league <- 'NCAA'
-    # teamStatsNcaa <- teamStatsNcaa %>% bind_rows(teamStatsTemp)
+    try ({
+      print('2')
+      print(categories[[1]]['category'])
+      t <- cfbfastR::cfbd_stats_season_player(year, season_type = 'both', team = NULL, conference = NULL, start_week = week, end_week = week, category = categories[[1]]['category']) %>%
+        select(one_of(unlist(categories[[1]]['columns'])))
+      for (cat in categories[2:length(categories)])
+      {
+        tryCatch ({
+          print(cat['category'])
+          t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = 'both', team = NULL, conference = NULL, start_week = week, end_week = week, category = cat['category']) %>%
+            select(one_of(unlist(cat['columns'])))
+          t <- suppressMessages(full_join(t, t2, na_matches = 'never'))
+        }, error = function(e) {
+          message("Function returned no data")
+        })
+      }
+      t$season <- year
+      t$week <- week
+      t$league <- 'NCAA'
+      playerStatsNcaa <- playerStatsNcaa %>% bind_rows(t)
+    })
+    # t <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "passing") %>%
+    #   select(athlete_id, team, passing_completions, passing_att, passing_yds, passing_td, passing_int)
+    # t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "rushing") %>%
+    #   select(athlete_id, team, rushing_car, rushing_yds, rushing_td)
+    # t <- full_join(t, t2, na_matches = "never")
+    # t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "receiving") %>%
+    #   select(athlete_id, team, receiving_rec, receiving_yds, receiving_td)
+    # t <- full_join(t, t2, na_matches = "never")
+    # if (year >= 2009)
+    # {
+    #   t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "kickReturns") %>%
+    #     select(athlete_id, team, kick_returns_no, kick_returns_yds, kick_returns_td)
+    #   t <- full_join(t, t2, na_matches = "never")
+    # }
+    # if (!(year == 2016 & week == 15))
+    # {
+    #   t2 <- cfbfastR::cfbd_stats_season_player(year, season_type = "both", team = NULL, conference = NULL, start_week = week, end_week = week, category = "puntReturns") %>%
+    #     select(athlete_id, team, punt_returns_no, punt_returns_yds, punt_returns_td)
+    #   t <- full_join(t, t2, na_matches = "never")
+    # }
+
   }
 }
 
